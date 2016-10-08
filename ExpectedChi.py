@@ -24,10 +24,10 @@ class ExpectedChi:
         # make the 4 dimentional array : all_signals
         # each element in all_signals is 3 dimentional array whose shape is (T! * 4 * T )
         params = self.setparam()
-        all_signals = np.empty([self.sim, factorial(self.T).astype(int), 4, self.T])
+        all_signals = np.empty([self.sim, min(100, factorial(self.T).astype(int)), 4, self.T])
         g = np.random.RandomState(self.random_state)
         for i in range(self.sim):
-            for k in range(factorial(self.T).astype(int)):
+            for k in range(min(100, factorial(self.T).astype(int))):
                 for j in range(4):
                     all_signals[i, k, j, :] = g.normal(params[j + 9, i], 1/params[0, i],  (1, self.T))
         return all_signals
@@ -45,7 +45,7 @@ class ExpectedChi:
         # calculating expected chi_k given omega
         cum = self.cum_signals()
         params = self.setparam()
-        transform = np.empty((self.sim, factorial(self.T).astype(int), 4, self.T))
+        transform = np.empty((self.sim, min(100, factorial(self.T).astype(int)), 4, self.T))
         
         # first multiply cum by rho_eta 
         for i in range(self.sim):
