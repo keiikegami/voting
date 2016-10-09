@@ -36,7 +36,7 @@ parameter = [1000000000;0;inivalue]
 writetable(*("parameter_", "$ii", "_", "$jj", "_", "$kk", ".txt"), DataFrame(X = parameter), separator = '\t')
 
 #　ここから本題
-D　=　data[:,45] .< 100 # Remove municipality with small populaion <100
+D　=　data[:,45] .> 100 # Remove municipality with small populaion <100
 # 行削除はどうするのか、そもそもいるのか
 # data[D, :] = [];
 data = data[D, :]
@@ -81,7 +81,6 @@ Open = data[:,118];        # open
 MOpen = data[:,119];       # modified open
 VOther = VTotal - sum(Votes,2);  #Votes of Penna & Sharpton etc.
 RegDem = RDemHat./PopTot;  # (fraction of registered democrats in population)
-j = 0;
 
 # make Cand
 Cand = zeros(35,17);       
@@ -105,24 +104,25 @@ Cand = zeros(35,17);
                          # E[qi|omega_piv]-E[qi|omega_piv]
                          # the remains is explained below
 
+j = 0
 N_T_ij = [0;1;3;6];        # The number of T_ij that we need when the number of candidates are 1,2,3,4.
-for i in 1:length(data)  # lengthはmax(size(data))らしい
+for i in 1:size(data, 1)
     if j == data[i,149] - 1
-        Cand[j+1,1:4] = ones(1,4)+min(data[i,3:6],zeros(1,4));
+        Cand[j+1,1:4] = squeeze(ones(1,4), 1)+min(data[i,3:6], squeeze(zeros(1,4), 1));
         if j == 0
             Cand[j+1,5] = 0;
             Cand[j+1,6] = 0;
             Cand[j+1,11] = 0;
         else
             Cand[j+1,5] = Cand[j,6] + (sum(Cand[j+1,1:4])>1);
-            Cand[j+1,6] = Cand[j+1,5] + N_T_ij(sum(Cand[j+1,1:4]),1)-1+(sum(Cand[j+1,1:4])==1);
+            Cand[j+1,6] = Cand[j+1,5] + N_T_ij[convert(Int64, sum(Cand[j+1,1:4])),1] - 1+(sum(Cand[j+1,1:4])==1);
         end
 
         # 1 if before or on super Tues.
 
         Cand[j+1,10] = (data[i,120] - 92<=0);
         Cand[j+1,7] = sum(sum(Cand[1:j+1,1:4]))-sum(Cand[j+1,1:4])+1;
-        Cand[j+1,8] = sum(sum(Cand(1:j+1,1:4)));
+        Cand[j+1,8] = sum(sum(Cand[1:j+1,1:4]));
 
         Cand[j+1,17] =  sum(sum(Cand[1:j+1,1:4].*(Cand[1:j+1,10]*ones(1,4))));
         Cand[j+1,16] = Cand[j+1,17]-sum(Cand[j+1,1:4]*Cand[j+1,10])+1;
@@ -147,17 +147,20 @@ for i in 1:length(data)  # lengthはmax(size(data))らしい
             Cand[j+1,11] = sum((Cand[1:j,6] - Cand[1:j,5]+1).*Cand[1:j,10],1)+Cand[j+1,10]*(sum(Cand[j+1,1:4]) > 1);
             Cand[j+1,12] = sum((Cand[1:j+1,6] - Cand[1:j+1,5]+1).*Cand[1:j+1,10],1);
         end
-
+        
         Cand[j+1,13] = data[i,120];
         Cand[j+1,14] = i;
          j = j+1;
+        
     end
-end
 
-Cand[:,11] = Cand[:,10].*Cand[:,11];      # Atamadashi ignoring post-super
-Cand[:,12] = Cand[:,10].*Cand[:,12];      # Tues states
-Cand[1:end-1,15] = Cand[2:end,14]-1;
-Cand[end,15] = i;
+
+    Cand[:,11] = Cand[:,10].*Cand[:,11];      # Atamadashi ignoring post-super
+    Cand[:,12] = Cand[:,10].*Cand[:,12];      # Tues states
+    Cand[1:end-1,15] = Cand[2:end,14]-1;
+    Cand[end,15] = i;
+
+end
 
 iij = unique(Cand[:,13]);
 for i in 1:size(unique(Cand[:,13]),1)
@@ -171,12 +174,12 @@ end
 NNCan[1,1] = 4;
 A_Exi[1,:] = [1 4];
 PatternCandall[1,:] = [1 1 1 1];
-for S in 2:max(Cand[:,13] 0 1)
+for S in 2:max(Cand[:,13], 0, 1)
     # of candidate on date S
     Temp = Cand;
     # 行削除はどうする
     # Temp[(Temp[:,13] .!= S), :]=[];
-    Temp = Temp[[Temp[:,13] .!= S], :]
+    Temp = Temp[[Temp[:,13] .== S], :]
     NNCan[S,1] = sum((sum(Temp[:,1:4],1) .> 0),2);
     PatternCandall[S,1:4] = (sum(Temp[:,1:4],1) > 0);
     # Atamadashi for ExiOmega
