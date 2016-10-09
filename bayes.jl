@@ -12,28 +12,20 @@ N_cand = 4
 data = readtable("data.csv", header = false)
 data = convert(Array, data)
 
-#make file
-iii = 1 #kokokaeruiii;
-jjj = 1 #kokokaerujjj;
-kkk = 2 #kokokaerukkk;
+# initial valueのロード
+iii = 1
+jjj = 1
+kkk = 1
 
-# convert int to string
-ii = "$iii";
-jj = "$jjj";
-kk = "$kkk";
-
-# たぶんココいらない
-file3 = *("parameter_", "$ii", "_", "$jj", "_", "$kk", ".txt")
-file4 = *("inivalue_", "$ii", ".txt")
-
-# これはinivalueをロードしてる
-inivalue = readtable(*("inivalue_", "$ii", ".txt"), separator = '\t')
-
+inivalue = readtable(*("inivalue_", "$iii", ".txt"))
 inivalue = inivalue[:, jjj]
 
-# 直下で定義したparameterをfile3の名前で保存
-parameter = [1000000000;0;inivalue]
-writetable(*("parameter_", "$ii", "_", "$jj", "_", "$kk", ".txt"), DataFrame(X = parameter), separator = '\t')
+learning_params = readtable(*("learning_params", "$iii", ".txt"))
+learning_params = learning_params[:, jjj]
+
+parameter = vcat(1000000000, 0, inivalue, learning_params)
+writetable(*("parameter_", "$iii", "_", "$jjj", "_", "$kkk", ".txt"), DataFrame(X = parameter))
+
 
 #　ここから本題
 D　=　data[:,45] .> 100 # Remove municipality with small populaion <100
@@ -83,7 +75,8 @@ VOther = VTotal - sum(Votes,2);  #Votes of Penna & Sharpton etc.
 RegDem = RDemHat./PopTot;  # (fraction of registered democrats in population)
 
 # make Cand
-Cand = zeros(35,17);       
+# 何で18列目から21列めまでを開けてる？
+Cand = zeros(35,27);       
 
                          # Candidates whose name is on ballot (column 1;4)
                          # Column 5 corresponds to ichiban maeno parameter
@@ -144,8 +137,10 @@ for i in 1:size(data, 1)
 
         #Atamadashi for params
         if j > 0
-            Cand[j+1,11] = sum((Cand[1:j,6] - Cand[1:j,5]+1).*Cand[1:j,10],1)+Cand[j+1,10]*(sum(Cand[j+1,1:4]) > 1);
-            Cand[j+1,12] = sum((Cand[1:j+1,6] - Cand[1:j+1,5]+1).*Cand[1:j+1,10],1);
+            a = sum((Cand[1:j,6] - Cand[1:j,5]+1).*Cand[1:j,10],1)+Cand[j+1,10]*(sum(Cand[j+1,1:4]) > 1)
+            Cand[j+1,11] = a[1];
+            b = sum((Cand[1:j+1,6] - Cand[1:j+1,5]+1).*Cand[1:j+1,10],1)
+            Cand[j+1,12] = b[1];
         end
         
         Cand[j+1,13] = data[i,120];
@@ -171,24 +166,29 @@ for i in 1:size(unique(Cand[:,13]),1)
     end
 end
 
+w = convert(Int64, maximum(Cand[:,13]))
+NNCan = ones(w, 1)
+A_Exi = ones(w, 2)
+PatternCandall = ones(w, 4)
 NNCan[1,1] = 4;
 A_Exi[1,:] = [1 4];
 PatternCandall[1,:] = [1 1 1 1];
-for S in 2:max(Cand[:,13], 0, 1)
+
+for S in 2:w
     # of candidate on date S
     Temp = Cand;
     # 行削除はどうする
     # Temp[(Temp[:,13] .!= S), :]=[];
-    Temp = Temp[[Temp[:,13] .== S], :]
-    NNCan[S,1] = sum((sum(Temp[:,1:4],1) .> 0),2);
-    PatternCandall[S,1:4] = (sum(Temp[:,1:4],1) > 0);
+    Temp = Temp[Temp[:,13] .== S, :]
+    NNCan[S,1] = sum(sum(Temp[:,1:4],1) .> 0);
+    PatternCandall[S,1:4] = (sum(Temp[:,1:4]) > 0);
     # Atamadashi for ExiOmega
-    A_Exi[S,:] = [A_Exi[S-1,2] + 1, A_Exi[S-1,2] + NNCan[S,1]];
+    A_Exi[S,:] = [A_Exi[S-1,2]+1 (A_Exi[S-1,2] + NNCan[S,1])];
 end
 
 for S = 1:size(Cand,1)
-    SS = Cand[S,13];
-    Cand[S,22:23] = [A_Exi[SS,:]];
+    SS = convert(Int64, Cand[S,13]);
+    Cand[S,22:23] = A_Exi[SS,:];
     Cand[S,24:27] = PatternCandall[SS,:];
 end
 
@@ -219,16 +219,7 @@ srand(10);
 SimXsi = randn(N_muni, N_cand, N_sim);
 SimAlp = rand(N_muni, N_sim);
 
-# simulate for SimXiOmg
-# initial values are maked by python
-# learning_params is [13, 100]
-# maybe use just the first column
-learning_params = readtable('learning_params.txt', separator = '\t')
-# append learing_params(:,1) to the last of inivalue
-inivalue = [inivalue; learning_params[:,1]]
-
-
 # delete OPTIONS1
 # replace x0 by inivalue
-bestpara = [1000000;0;inivalue];
-theta, likli = optimize(new_loglike, inivalue, BFGS())
+# bestpara = [1000000;0;inivalue];
+theta, likli = optimize(new_loglike, parameter, BFGS())
