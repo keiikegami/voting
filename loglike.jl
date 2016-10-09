@@ -37,7 +37,6 @@ function new_loglike(param::Array{Float64,1})
     # simulated values
     N_T_ij = [0;1;3;6]
     # 上で拡張した関数を使用
-    # ここまではきてる。
     Alpha = betainvcdf(FAlph[1,1],FAlph[2,1], SimAlp)
     Xsi = Sig_xsi*SimXsi
 
@@ -46,27 +45,24 @@ function new_loglike(param::Array{Float64,1})
     # VSinは48×4
     VSin = X[:,2:end]*[vk[1:4] vk[5:8] vk[9:12] vk[13:16]]-C0-X[:, 2:end]*Cx*ones(1,4)
     # Base Utility for Strategic, [# of categories X # of candidates]
+    # VStrも48×4
     VStr = X[:, 2:end]*[vk[1:4] vk[5:8] vk[9:12] vk[13:16]]
-    # ここまでは来てる
 
     #Eligible voters accounting for Open and Modified Open
     DELTA = DeltaO*Open+DeltaMO*MOpen
     RTOT = RDemHat.*(1+DELTA)-VOther
-    # ここまでは来てる
 
     # store signals in advance
     signals = randn(4,T) * sqrt(1/rho_eta)
     for i in 1:4
         signals[i, :] = signals[i, :] + chi[i, 1]
     end
-    # ここまで来た
 
     loglik_s = zeros(size(Cand,1),1)
 
     # Candをdateについての昇順に変える
     # sort(Cand,13)
     sortrows(Cand, by = x->(x[13]))
-    # ここまで来た
     
     col9 = convert(Array{Int64,1},Cand[:, 9])
     col10 = convert(Array{Int64,1},Cand[:, 10])
@@ -81,7 +77,7 @@ function new_loglike(param::Array{Float64,1})
     for S in 1:size(Cand,1)
         if col15[S] - col14[S] < 21 || S == 30 || S == 34 #Excluding Utah, Wisconsin, and small
         else
-            N_candS = convert(Int64, sum(Cand[S,1:4]))
+            N_candS = sum(Cand[S,1:4] .!= 0.0)
             M = col15[S] - col14[S] + 1    # Number of municipalities in State S
             
             if col11[S] == 0
@@ -92,9 +88,10 @@ function new_loglike(param::Array{Float64,1})
                 COMPOSITE = composite[col16[S]:col17[S],1]
             end
 
-            VSTR_s = []
+            # VSTR_s = []
             Dropped_s = find(Cand[S,1:4] .== 0.0)            # index of candidates withdrawn.
             Rem = Cand[S,1:4] .!= 0.0
+            print(Rem)
             Candidate_s = find(Cand[S,1:4] .== 1.0)        # index of cadidate
             Senate_s = DATA[col14[S], 27]*Cz[1,1]     # Cost from Senate elections
             Governer_s = DATA[col14[S], 29]*Cz[3,1]    # Cost from GOvernor elections
@@ -117,8 +114,10 @@ function new_loglike(param::Array{Float64,1})
             # VSin_s[:, Dropped_s] = []
             VSin_s = VSin_s[:, Rem]
             VStr_s = VStr
+            # println(size(VStr_s, 2))
             # VStr_s[:, Dropped_s] = []
             VStr_s = VStr_s[:, Rem]
+            print(size(VStr_s, 2))
 
             # make XiOmg_s whose size is [1, num of candidates in the state]
             # take necessary parameters
@@ -135,8 +134,12 @@ function new_loglike(param::Array{Float64,1})
             XiOmg_s = upper ./ under
 
             VSin_s = VSin_s + ones(size(VSin_s,1), 1)*XiOmg_s' -Senate_s-Governer_s
+            
+            # col9は0~4、4は？
 
+            print(col9[S])
             if col9[S] == 1 && col10[S] == 1
+                VSTR_s = ones(48, 4)
                 Composite = ones(size(X,1),1)*COMPOSITE'
                 VSTR_s[:,1] = T_s[1,1]*(VStr_s[:,1]-VStr_s[:,2])+T_s[2,1]*(VStr_s[:,1]-VStr_s[:,3])
                 +T_s[3,1]*(VStr_s[:,1]-VStr_s[:,4])+Composite[:,1]
@@ -147,7 +150,9 @@ function new_loglike(param::Array{Float64,1})
                 VSTR_s[:,4] = T_s[3,1]*(VStr_s[:,4]-VStr_s[:,1])+T_s[5,1]*(VStr_s[:,4]-VStr_s[:,2])
                 +T_s[6,1]*(VStr_s[:,4]-VStr_s[:,3])+Composite[:,4]
 
-            elseif (col9[S] == 2 || col9[S] == 3) && col10[S] == 1
+            # ここに問題がある?
+            elseif (col9[S] == 2 || col9[S] == 3 || col9[S] == 4) && col10[S] == 1
+                VSTR_s = ones(48, 3)
                 Composite = ones(size(X,1),1)*COMPOSITE'
                 VSTR_s[:,1] = T_s[1,1]*(VStr_s[:,1]-VStr_s[:,2])+T_s[2,1]*(VStr_s[:,1]-VStr_s[:,3])
                 +Composite[:,1]
@@ -162,6 +167,8 @@ function new_loglike(param::Array{Float64,1})
                 VSTR_s = VSin_s + 2*(Senate_s+Governer_s)
             end
 
+            print(N_candS)
+            println(size(VSTR_s, 2))
             # Utiltiy of Strategic with no house elections
             VSTR_s = VSTR_s - C0 - X[:,2:end]*Cx*ones(1,N_candS) - Senate_s - Governer_s
 
@@ -220,7 +227,7 @@ function new_loglike(param::Array{Float64,1})
         
                     VSHARE = VSIN_ss
                     # pdfはStatsFunsのnorrmpdfを使用
-                    loglik_m[m,1] = log(sum(prod(normpdf((ones(N_sim,1)*reshape(Votes_s[m,:], 1, N_candS) - VSHARE)./bandwidth),2),1)/N_sim)
+                    loglik_m[m,1] = log(sum(prod(normpdf((ones(N_sim,1)*reshape(Votes_s[m,:], 1, N_candS) - VSHARE)/bandwidth),2),1)/N_sim)[1]
                 end
                 loglik_s[S,1] = sum(loglik_m)
             end
