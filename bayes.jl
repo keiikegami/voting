@@ -52,7 +52,7 @@ dFXIncm = [sum(data[:,129:132], 2) sum(data[:,133:136], 2) sum(data[:,137:140], 
 for r in 1:3
     for e in 1:4
         for i in 1:4
-            X = [X; reshape([Race[1,1:3] ; Educ[1] ; Incm[1]], 1, 5)];
+            X = [X; reshape([Race[r,1:3] ; Educ[e] ; Incm[i]], 1, 5)];
             dFX = [dFX dFXRace[:,r].*dFXEduc[:,e].*dFXIncm[:,i]];
         end
     end
@@ -61,11 +61,15 @@ end
 del = trues(size(X, 1))
 del[1] = false
 X = X[del, :]
+del2 = trues(size(dFX, 2))
+del2[1] = false
+dFX = dFX[:, del2]
 
 N_dFX = size(dFX,2);
 N_muni = size(dFX,1);      # (number of municipalities)
 # data3,4,5,6はまさかのstring型
-Votes = [max(0,data[:,3]) max(0,data[:,4]) max(0,data[:,5]) max(0,data[:,6])]; # (votes:  clark, dean, edwards, kerry)municipalityごとに、いない奴は0になるようにしてる
+# (votes:  clark, dean, edwards, kerry)municipalityごとに、いない奴は0になるようにしてる
+Votes = [max(0,data[:,3]) max(0,data[:,4]) max(0,data[:,5]) max(0,data[:,6])]; 
 VTotal = data[:,117];      # (total number of votes)
 RDemHat = data[:,148];     # (registred number of democrats predicted)
 PopTot = data[:,45];       # (total population)
@@ -123,13 +127,13 @@ for i in 1:size(data, 1)
 
         # Baai-wake: [Clark,Dean,Edawards]
         # Type 0: [000] Type 1:[111] Type2:[101] Type3: [011] Type4: [010]
-        if Cand[j+1,1:3] == zeros(1,3)
+        if Cand[j+1,1:3] == [0,0,0]
             Cand[j+1,9] = 0;
-        elseif Cand[j+1,1:3] == ones(1,3)
+        elseif Cand[j+1,1:3] == [1, 1, 1]
             Cand[j+1,9] = 1;
-        elseif Cand[j+1,1:3] == [1,0,1]
+        elseif Cand[j+1,1:3] == [1, 0, 1]
             Cand[j+1,9] = 2;
-        elseif Cand[j+1,1:3] == [0,1,1]
+        elseif Cand[j+1,1:3] == [0, 1, 1]
             Cand[j+1,9] = 3;
         else
             Cand[j+1,9] = 4;
@@ -218,8 +222,3 @@ srand(10);
 # reshape the data to [T, N_cand, N_sim]
 SimXsi = randn(N_muni, N_cand, N_sim);
 SimAlp = rand(N_muni, N_sim);
-
-# delete OPTIONS1
-# replace x0 by inivalue
-# bestpara = [1000000;0;inivalue];
-theta, likli = optimize(new_loglike, parameter, BFGS())
