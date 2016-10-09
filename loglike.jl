@@ -220,7 +220,7 @@ function new_loglike(param::Array{Float64,1})
         
                     VSHARE = VSIN_ss
                     # pdfはStatsFunsのnorrmpdfを使用
-                    loglik_m[m,1] = log(sum(prod(normpdf((ones(N_sim,1)*Votes_s[m,:] - VSHARE)/bandwidth),2),1)/N_sim)
+                    loglik_m[m,1] = log(sum(prod(normpdf((ones(N_sim,1)*reshape(Votes_s[m,:], 1, N_candS) - VSHARE)./bandwidth),2),1)/N_sim)
                 end
                 loglik_s[S,1] = sum(loglik_m)
             end
