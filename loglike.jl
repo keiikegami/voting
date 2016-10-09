@@ -1,4 +1,4 @@
-function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}))
+function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
     
     # これなんだかわからないのでコメントアウト
     #if i_bayes == 1
