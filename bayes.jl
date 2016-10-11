@@ -222,3 +222,6 @@ srand(10);
 # reshape the data to [T, N_cand, N_sim]
 SimXsi = randn(N_muni, N_cand, N_sim);
 SimAlp = rand(N_muni, N_sim);
+
+Cand = convert(Array{Int64, 2}, Cand)
+Cand = sortrows(Cand, by = x->(x[13]))

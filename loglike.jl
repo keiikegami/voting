@@ -1,4 +1,4 @@
-function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
+function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{Int64, 2})
     
     # これなんだかわからないのでコメントアウト
     #if i_bayes == 1
@@ -33,7 +33,6 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
     
     
     # making log likelihood
-
     # simulated values
     N_T_ij = [0;1;3;6]
     # 上で拡張した関数を使用
@@ -54,48 +53,36 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
 
     # store signals in advance
     signals = randn(4,T) * sqrt(1/rho_eta)
+    
     for i in 1:4
         signals[i, :] = signals[i, :] + chi[i, 1]
     end
 
     loglik_s = zeros(size(Cand,1),1)
 
-    # Candをdateについての昇順に変える
-    # sort(Cand,13)
-    sortrows(Cand, by = x->(x[13]))
-    
-    col9 = convert(Array{Int64,1},Cand[:, 9])
-    col10 = convert(Array{Int64,1},Cand[:, 10])
-    col11 = convert(Array{Int64,1},Cand[:, 11])
-    col12 = convert(Array{Int64,1},Cand[:, 12])
-    col13 = convert(Array{Int64,1},Cand[:, 13])
-    col14 = convert(Array{Int64,1},Cand[:, 14])
-    col15 = convert(Array{Int64,1},Cand[:, 15])
-    col16 = convert(Array{Int64,1},Cand[:, 16])
-    col17 = convert(Array{Int64,1},Cand[:, 17])
-    
     for S in 1:size(Cand,1)
-        if col15[S] - col14[S] < 21 || S == 30 || S == 34 #Excluding Utah, Wisconsin, and small
+        if Cand[S, 15] - Cand[S, 14] < 21 || S == 30 || S == 34 #Excluding Utah, Wisconsin, and small
         else
-            N_candS = sum(Cand[S,1:4] .!= 0.0)
-            M = col15[S] - col14[S] + 1    # Number of municipalities in State S
             
-            if col11[S] == 0
+            N_candS = sum(Cand[S,1:4] .!= 0)
+            M = Cand[S, 15] - Cand[S, 14] + 1    # Number of municipalities in State S
+            
+            if Cand[S, 11] == 0
                 T_s = zeros(N_T_ij[N_candS,1],1)
                 COMPOSITE = zeros(N_candS,1)
             else
-                T_s = Tij[col11[S]:col12[S],1]
-                COMPOSITE = composite[col16[S]:col17[S],1]
+                T_s = Tij[Cand[S, 11]:Cand[S, 12],1]
+                COMPOSITE = composite[Cand[S, 16]:Cand[S, 17],1]
             end
 
             # VSTR_s = []
-            Dropped_s = find(Cand[S,1:4] .== 0.0)            # index of candidates withdrawn.
-            Rem = Cand[S,1:4] .!= 0.0
-            Candidate_s = find(Cand[S,1:4] .== 1.0)        # index of cadidate
-            Senate_s = DATA[col14[S], 27]*Cz[1,1]     # Cost from Senate elections
-            Governer_s = DATA[col14[S], 29]*Cz[3,1]    # Cost from GOvernor elections
-            dFX_s = dFX[col14[S]:col15[S], :]
-            date = col13[S]                          # election date (1 ~ 14)
+            Dropped_s = find(Cand[S,1:4] .== 0)            # index of candidates withdrawn.
+            Rem = Cand[S,1:4] .!= 0
+            Candidate_s = find(Cand[S,1:4] .== 1)        # index of cadidate
+            Senate_s = DATA[Cand[S, 14], 27]*Cz[1,1]     # Cost from Senate elections
+            Governer_s = DATA[Cand[S, 14], 29]*Cz[3,1]    # Cost from GOvernor elections
+            dFX_s = dFX[Cand[S, 14]:Cand[S, 15], :]
+            date = Cand[S, 13]                          # election date (1 ~ 14)
 
             # というか列の削除をする必要があるのか
             temp = Cand[S,1:4]
@@ -105,8 +92,8 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
             temp = temp[Cand[S,24:27] .!= 0.0]
             PatternCand_d = PatternCand_d[Cand[S,24:27] .!= 0.0]
 
-            Alpha_s = reshape(Alpha[col14[S]:col15[S], :, :], length(col14[S]:col15[S]), 100)
-            Xsi_s = Xsi[col14[S]:col15[S], :, :]
+            Alpha_s = reshape(Alpha[Cand[S, 14]:Cand[S, 15], :, :], length(Cand[S, 14]:Cand[S, 15]), 100)
+            Xsi_s = Xsi[Cand[S, 14]:Cand[S, 15], :, :]
 
             # そもそも削除する必要があるか
             VSin_s = VSin
@@ -135,7 +122,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
             
             # col9は0~4、4は？
 
-            if col9[S] == 1 && col10[S] == 1
+            if Cand[S, 9] == 1 && Cand[S, 10] == 1
                 VSTR_s = ones(48, 4)
                 Composite = ones(size(X,1),1)*COMPOSITE'
                 VSTR_s[:,1] = T_s[1,1]*(VStr_s[:,1]-VStr_s[:,2])+T_s[2,1]*(VStr_s[:,1]-VStr_s[:,3])
@@ -147,7 +134,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
                 VSTR_s[:,4] = T_s[3,1]*(VStr_s[:,4]-VStr_s[:,1])+T_s[5,1]*(VStr_s[:,4]-VStr_s[:,2])
                 +T_s[6,1]*(VStr_s[:,4]-VStr_s[:,3])+Composite[:,4]
 
-            elseif (col9[S] == 2 || col9[S] == 3 || col9[S] == 4) && col10[S] == 1
+            elseif (Cand[S, 9] == 2 || Cand[S, 9] == 3 || Cand[S, 9] == 4) && Cand[S, 10] == 1
                 VSTR_s = ones(48, 3)
                 Composite = ones(size(X,1),1)*COMPOSITE'
                 VSTR_s[:,1] = T_s[1,1]*(VStr_s[:,1]-VStr_s[:,2])+T_s[2,1]*(VStr_s[:,1]-VStr_s[:,3])
@@ -158,7 +145,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
                 +Composite[:,3]
 
 
-            elseif col10[S] == 0  # after super tuesday
+            elseif Cand[S, 10] == 0  # after super tuesday
                 # VSTR_s=VSin_s+C0+X(:,2:end)*Cx(1:3)*ones(1,N_candS) ?
                 VSTR_s = VSin_s + 2*(Senate_s+Governer_s)
             end
@@ -170,20 +157,21 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
             VSIN_ss = zeros(N_sim,N_candS)
 
             # eligible voters
-            RTot_s = RTOT[col14[S]:col15[S], :]
-            RTot_s = max(RTot_s, sum(Votes[col14[S]:col15[S], :], 2))
-            Votes_s = Votes[col14[S]:col15[S], :]./(RTot_s*ones(1,4)) #vote share data
+            RTot_s = RTOT[Cand[S, 14]:Cand[S, 15], :]
+            RTot_s = max(RTot_s, sum(Votes[Cand[S, 14]:Cand[S, 15], :], 2))
+            Votes_s = Votes[Cand[S, 14]:Cand[S, 15], :]./(RTot_s*ones(1,4)) #vote share data
             # 行削除
             # Votes_s[:, Dropped_s] = []
             Votes_s = Votes_s[:, Rem]
             loglik_m = zeros(M,1)
+            
 
-            if col10[S] == 1
-
+            # ここ以降が遅い
+            # どっちも遅いが、beforeの方が平均的に遅い
+            if Cand[S, 10] == 1
                 for m in 1:M
-                    VSin_s = VSin_s - Cz[2,1]*DATA[col14[S] + m - 1, 28]
-                    VSTR_s = VSTR_s - Cz[2,1]*DATA[col14[S] + m - 1, 28]
-
+                    VSin_s = VSin_s - Cz[2,1]*DATA[Cand[S, 14] + m - 1, 28]
+                    VSTR_s = VSTR_s - Cz[2,1]*DATA[Cand[S, 14] + m - 1, 28]
                     for sim in 1:N_sim
 
                         nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS, sim], 1, N_candS), 200), -200)
@@ -204,19 +192,16 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
         
                 loglik_s[S,1] = sum(loglik_m)
 
-            elseif col10[S] == 0
-
+            elseif Cand[S, 10] == 0
                 for m in 1:M
-                    VSin_s = VSin_s-Cz[2,1]*DATA[col14[S]+m-1, 28]
-                    AST = 1./(1+exp(C0+X[:,2:end]*Cx*ones(1,N_candS) + Cz[2,1]*DATA[col14[S]+m-1, 28]+Senate_s+Governer_s))
+                    VSin_s = VSin_s-Cz[2,1]*DATA[Cand[S, 14]+m-1, 28]
+                    AST = 1./(1+exp(C0+X[:,2:end]*Cx*ones(1,N_candS) + Cz[2,1]*DATA[Cand[S, 14]+m-1, 28]+Senate_s+Governer_s))
                     # AST: Turnout of strategic voters after super tuesday
-                    
                     for sim in 1:N_sim
 
                         nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m, 1:N_candS,sim], 1, N_candS), 200), -200)
                         eVSIN_ss = exp(nakami)./ (1 + sum(exp(nakami),2)*ones(1,N_candS))
                         VSIN_ss[sim, :] = reshape(dFX_s[m, :], 1, 48) * eVSIN_ss
-                    
                     end
         
                     VSHARE = VSIN_ss
@@ -227,6 +212,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2})
             end
         end
         
+        # これなんだろ
         if S == 10
             S = S
         end
