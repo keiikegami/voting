@@ -153,9 +153,6 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
             # Utiltiy of Strategic with no house elections
             VSTR_s = VSTR_s - C0 - X[:,2:end]*Cx*ones(1,N_candS) - Senate_s - Governer_s
 
-            VSTR_ss = zeros(N_sim,N_candS)
-            VSIN_ss = zeros(N_sim,N_candS)
-
             # eligible voters
             RTot_s = RTOT[Cand[S, 14]:Cand[S, 15], :]
             RTot_s = max(RTot_s, sum(Votes[Cand[S, 14]:Cand[S, 15], :], 2))
@@ -165,23 +162,64 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
             Votes_s = Votes_s[:, Rem]
             loglik_m = zeros(M,1)
             
+            VSTR_ss = Array(Float64, N_sim,N_candS)
+            VSIN_ss = Array(Float64, N_sim,N_candS)
 
             # ここ以降が遅い
             # どっちも遅いが、beforeの方が平均的に遅い
             if Cand[S, 10] == 1
+                
+                A1 = Array(Float64, N_dFX, N_candS)
+                A2 = Array(Float64, N_dFX, N_candS)
+                B1 = Array(Float64, 1, N_candS)
+                B2 = Array(Float64, 1, N_candS)
+                cont1 = Array(Float64, N_dFX)
+                cont2 = Array(Float64, N_dFX)
+                #eVSIN_ss = Array(Float64, N_dFX, N_candS)
+                #eVSTR_ss = Array(Float64, N_dFX, N_candS)
+                
                 for m in 1:M
                     VSin_s = VSin_s - Cz[2,1]*DATA[Cand[S, 14] + m - 1, 28]
                     VSTR_s = VSTR_s - Cz[2,1]*DATA[Cand[S, 14] + m - 1, 28]
+                    
+                    # for文に書き換え
                     for sim in 1:N_sim
-
-                        nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS, sim], 1, N_candS), 200), -200)
-                        nakami2 = max(min(VSTR_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS,sim], 1, N_candS), 200), -200)
-
+                        
+                        # nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS, sim], 1, N_candS), 200), -200)
+                        # nakami2 = max(min(VSTR_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS,sim], 1, N_candS), 200), -200)
+                        for i in 1:N_candS
+                            for j in 1:N_dFX
+                                A1[j, i] = VSin_s[j, i] + Xsi_s[m, i, sim]
+                                A2[j, i] = VSTR_s[j, i] + Xsi_s[m, i, sim]
+                            end
+                        end
+                        nakami = max(min(A1, 200.0), -200.0)
+                        nakami2 = max(min(A2, 200.0), -200.0)
+                        
+                
                         eVSIN_ss = exp(nakami)./ (1+sum(exp(nakami),2)*ones(1,N_candS))
                         eVSTR_ss = exp(nakami2)./ (1+sum(exp(nakami2),2)*ones(1,N_candS))
-
-                        VSTR_ss[sim, :] = reshape(dFX_s[m, :],1, 48)*eVSTR_ss
-                        VSIN_ss[sim, :] = reshape(dFX_s[m, :], 1, 48)*eVSIN_ss
+                        #naka = sum(exp(nakami), 2)
+                        #naka2 = sum(exp(nakami2), 2)
+                        #for i in 1:N_candS
+                          #  for j in 1:N_dFX
+                            #    eVSIN_ss[j, i] = exp(nakami[j,i])/(1+ naka[j])
+                               # eVSTR_ss[j, i] = exp(nakami2[j,i])/(1+ naka2[j])
+                            #end
+                        #end
+                        
+                        
+                        # VSTR_ss[sim, :] = reshape(dFX_s[m, :],1, 48)*eVSTR_ss
+                        # VSIN_ss[sim, :] = reshape(dFX_s[m, :], 1, 48)*eVSIN_ss
+                        for i in 1:N_candS
+                            for j in 1:N_dFX
+                                cont1[j] = dFX_s[m, j]*eVSTR_ss[j, i]
+                                cont2[j] = dFX_s[m, j]*eVSIN_ss[j, i]
+                            end
+                            VSTR_ss[sim,  i] = sum(cont1)
+                            VSIN_ss[sim, i] = sum(cont2)
+                        end
+                        
                     end
 
                     Alp_ss = Alpha_s[m, :]
@@ -193,15 +231,44 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
                 loglik_s[S,1] = sum(loglik_m)
 
             elseif Cand[S, 10] == 0
+                
+                A1 = Array(Float64, N_dFX, N_candS)
+                B2 = Array(Float64, 1, N_candS)
+                cont2 = Array(Float64, N_dFX)
+                #eVSIN_ss = Array(Float64, N_dFX, N_candS)
+                
                 for m in 1:M
                     VSin_s = VSin_s-Cz[2,1]*DATA[Cand[S, 14]+m-1, 28]
                     AST = 1./(1+exp(C0+X[:,2:end]*Cx*ones(1,N_candS) + Cz[2,1]*DATA[Cand[S, 14]+m-1, 28]+Senate_s+Governer_s))
                     # AST: Turnout of strategic voters after super tuesday
                     for sim in 1:N_sim
-
-                        nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m, 1:N_candS,sim], 1, N_candS), 200), -200)
+                        
+                        # nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS, sim], 1, N_candS), 200), -200)
+                        for i in 1:N_candS
+                            for j in 1:N_dFX
+                                A1[j, i] = VSin_s[j, i] + Xsi_s[m, i, sim]
+                            end
+                        end
+                        nakami = max(min(A1, 200.0), -200.0)
+                        
+                        
                         eVSIN_ss = exp(nakami)./ (1 + sum(exp(nakami),2)*ones(1,N_candS))
-                        VSIN_ss[sim, :] = reshape(dFX_s[m, :], 1, 48) * eVSIN_ss
+                        # naka = sum(exp(nakami), 2)
+                        # for i in 1:N_candS
+                           # for j in 1:N_dFX
+                              #  eVSIN_ss[j, i] = exp(nakami[j,i])/(1+ naka[j])
+                            #end
+                        #end
+                        
+                        
+                        # VSIN_ss[sim, :] = reshape(dFX_s[m, :], 1, 48) * eVSIN_ss
+                        for i in 1:N_candS
+                            for j in 1:N_dFX
+                                cont2[j] = dFX_s[m, j]*eVSIN_ss[j, i]
+                            end
+                            VSIN_ss[sim, i] = sum(cont2)
+                        end
+                        
                     end
         
                     VSHARE = VSIN_ss
