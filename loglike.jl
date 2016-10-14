@@ -26,7 +26,8 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
     Tij = abs(param[150:260])
     
     # new parameters
-    rho_eta = abs(param[261])
+    # rho_eta = abs(param[261])
+    rho_eta = 1
     rho_chi = param[262:265]
     mu_chi = param[266:269]
     chi = param[270:273]
@@ -146,8 +147,8 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
 
 
             elseif Cand[S, 10] == 0  # after super tuesday
-                # VSTR_s=VSin_s+C0+X(:,2:end)*Cx(1:3)*ones(1,N_candS) ?
-                VSTR_s = VSin_s + 2*(Senate_s+Governer_s)
+                VSTR_s=VSin_s+C0+X[:,2:end]*Cx*ones(1,N_candS)
+                # VSTR_s = VSin_s + 2*(Senate_s+Governer_s)
             end
 
             # Utiltiy of Strategic with no house elections
