@@ -41,9 +41,12 @@ Educ = 0.1*[16;14;12;9];
 Incm = log([20000;35000;72500;120000]);
 
 # (white,black,otherasian+indian+other)
+# 多分割合
 dFXRace = [data[:,121] data[:,124] data[:,122] + data[:,123] + data[:,125]];
 
+# これも割合
 dFXEduc = [data[:,126:128] (1- sum(data[:,126:128], 2))];  # (overba,underba,hs,other)
+# これ何？
 dFXIncm = [sum(data[:,129:132], 2) sum(data[:,133:136], 2) sum(data[:,137:140], 2) sum(data[:,141:144], 2)];
 
 # dFXIncm=data(:,129:144); % (income 16 category:
