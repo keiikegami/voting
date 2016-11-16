@@ -51,7 +51,7 @@ dFXIncm = [sum(data[:,129:132], 2) sum(data[:,133:136], 2) sum(data[:,137:140], 
 
 # dFXIncm=data(:,129:144); % (income 16 category:
 # -10K,15K,20K,25K,30K,35K,40,45,50,60,75,100,125,150,200,200+)
-# ここは精査する必要がありそう。
+# dFXはmunicipalityごとに、education, income, raceの同時分布を示したもの。
 for r in 1:3
     for e in 1:4
         for i in 1:4

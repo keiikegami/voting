@@ -188,6 +188,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
                         
                         # nakami = max(min(VSin_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS, sim], 1, N_candS), 200), -200)
                         # nakami2 = max(min(VSTR_s + ones(N_dFX,1)*reshape(Xsi_s[m,1:N_candS,sim], 1, N_candS), 200), -200)
+                        # なんでここでXsiタスの？
                         for i in 1:N_candS
                             for j in 1:N_dFX
                                 A1[j, i] = VSin_s[j, i] + Xsi_s[m, i, sim]
@@ -226,6 +227,9 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
                     Alp_ss = Alpha_s[m, :]
                     VSHARE = VSTR_ss.*(Alp_ss*ones(1,N_candS)) + VSIN_ss.*(1-Alp_ss*ones(1,N_candS))
                     # pdfはStatsFunsのnorrmpdfを使用
+                    # ここ、VSHAREとかはN_simかける候補者数の行列
+                    # prod(A,2)は行列Aの要素を横にかけて1列のベクトルにする。
+                    # だからやはりイメージ的にはN_simで割ることで平均的な尤度を求めている感じかな。
                     loglik_m[m,1] = log(sum(prod(normpdf((ones(N_sim,1)*reshape(Votes_s[m,:], 1, N_candS) - VSHARE)/bandwidth),2),1)/N_sim)[1]
                 end
         
