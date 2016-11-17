@@ -84,7 +84,7 @@ function simulate(m::simulation)
     end
 
     for S in 1:size(Cand,1)
-        println(S)
+        #println(S)
 
         if Cand[S, 15] - Cand[S, 14] < 21 || S == 30 || S == 34 #Excluding Utah, Wisconsin, and small
         else
@@ -313,8 +313,10 @@ end
 # method 2 : visualization tyoe 1 (for each combination of cadidates)
 # default setting allows you to draw the results of all states
 # you can set t as state number (1 ~ 35)
-function candcand(m::simulation, t = 0)
-    Votes = simulate(m)
+function candcand(m::simulation, t = 0, Votes = false)
+    if Votes == false
+        Votes = simulate(m)
+    end
     
     if t == 0
         plt = PyPlot
@@ -381,8 +383,11 @@ function candcand(m::simulation, t = 0)
 end
 
 # method 3 : visualization type 2 (summary vote rate for each state)
-function state_vote(m::simulation)
-    Votes = simulate(m)
+function state_vote(m::simulation, Votes = false)
+    if Votes == false
+        Votes = simulate(m)
+    end
+    
     shares = Array(Float64, size(Cand,1), 4)
 
     for S in 1:size(Cand,1)
@@ -402,8 +407,10 @@ end
 # you can choose demographic factor from ["race", "edu", "income"]
 # default setting allows you to draw the result of all states
 # you can set t as state number (1 ~ 35)
-function demo(m::simulation, demogra::String, t=0)
-    Votes = simulate(m)
+function demo(m::simulation, demogra::String, Votes = false, t=0)
+    if Votes = false
+        Votes = simulate(m)
+    end
     
     plt = PyPlot
     names = ["clark", "dean", "edwards", "kerry"]
