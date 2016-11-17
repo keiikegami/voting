@@ -384,6 +384,13 @@ end
 
 # method 3 : visualization type 2 (summary vote rate for each state)
 function state_vote(m::simulation, Votes = false)
+    
+    DeltaO  = 0.6891
+    DeltaMO = 0.5366
+    DELTA = DeltaO*Open+DeltaMO*MOpen
+    RTOT = RDemHat.*(1+DELTA)-VOther
+    names = ["clark", "dean", "edwards", "kerry"]
+    
     if Votes == false
         Votes = simulate(m)
     end
@@ -407,8 +414,8 @@ end
 # you can choose demographic factor from ["race", "edu", "income"]
 # default setting allows you to draw the result of all states
 # you can set t as state number (1 ~ 35)
-function demo(m::simulation, demogra::String, Votes = false, t=0)
-    if Votes = false
+function demo(m::simulation, demogra::String, t = 0, Votes = false)
+    if Votes == false
         Votes = simulate(m)
     end
     
@@ -459,6 +466,6 @@ function demo(m::simulation, demogra::String, Votes = false, t=0)
 
         plt.scatter(b, voterate_s, s = 50*kerry_s, alpha = 0.5)
         plt.title("state_number_$S")
-        savefig("$demogra_$S_plot")
+        savefig("$demogra" *"_"* "$S"*"_plot")
     end
 end
