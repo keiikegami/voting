@@ -1,3 +1,21 @@
+# preparation
+
+using Optim
+using StatsFuns
+using DataFrames
+using Gadfly
+using PyPlot
+
+import StatsFuns.betainvcdf
+betainvcdf(alpha::Number, beta::Number, x::Array) = reshape([betainvcdf(alpha, beta, i) for i in reshape(x, 1, size(x, 1)*size(x, 2)) ], size(x, 1), size(x, 2))
+import Base.max
+max(number::Real, comparison::Any) = [max(number, parse(Int, i)) for i in comparison] 
+import StatsFuns.normpdf
+normpdf(array::Array{Float64, 2}) = reshape([normpdf(i) for i in reshape(array, 1, size(array, 1)*size(array, 2))], size(array, 1), size(array, 2))
+
+include("bayes.jl");
+
+
 # type define
 type simulation
     param::Array{Float64, 1}
@@ -296,6 +314,7 @@ end
 # default setting allows you to draw the results of all states
 # you can set t as state number (1 ~ 35)
 function candcand(m::simulation, t = 0)
+    Votes = simulate(m)
     
     if t == 0
         plt = PyPlot
@@ -361,8 +380,9 @@ function candcand(m::simulation, t = 0)
     end
 end
 
-# method 3 : visualization type 3 (summary vote rate for each state)
+# method 3 : visualization type 2 (summary vote rate for each state)
 function state_vote(m::simulation)
+    Votes = simulate(m)
     shares = Array(Float64, size(Cand,1), 4)
 
     for S in 1:size(Cand,1)
@@ -383,6 +403,7 @@ end
 # default setting allows you to draw the result of all states
 # you can set t as state number (1 ~ 35)
 function demo(m::simulation, demogra::String, t=0)
+    Votes = simulate(m)
     
     plt = PyPlot
     names = ["clark", "dean", "edwards", "kerry"]
