@@ -470,3 +470,22 @@ function demo(m::simulation, demogra::String, t = 0, Votes = false)
         savefig("$demogra" *"_"* "$S"*"_plot")
     end
 end
+
+# method5 : make histogram of vote rate for each municipality
+function rate_histo(m::simulation, Votes = false)
+    if Votes == false
+        Votes = simulate(m)
+    end
+
+    names = ["clark", "dean", "edwards", "kerry"]
+    DeltaO  = 0.6891
+    DeltaMO = 0.5366
+    DELTA = DeltaO*Open+DeltaMO*MOpen
+    RTOT = RDemHat.*(1+DELTA)-VOther
+    
+    #RTOT = max(RTOT, sum(Votes, 2))
+    Vote_rate = sum(Votes ./ RTOT, 2)
+    PyPlot.plt[:hist](Vote_rate, 100)
+    #PyPlot.title("vote_rate")
+    savefig("vote_rate","_histo")
+end
