@@ -397,8 +397,9 @@ function state_vote(m::simulation, Votes = false)
     
     shares = Array(Float64, size(Cand,1), 4)
 
-    for S in 1:size(Cand,1)
-        shares[S,:] = sum(Votes[Cand[S, 14]:Cand[S, 15], :], 1)./ sum(RTOT[Cand[S, 14]:Cand[S, 15], :])
+    # municipalityごとにそのdemocratic人口で得票率をかけて、候補者ごとにその得票数を足し算。その後、その州におけるdemocratic人口の合計で割る。
+    for S in 1:size(Cand, 1)
+        shares[ S, :] = sum(Votes[Cand[S, 14]:Cand[S, 15], :] .* RTOT[Cand[S, 14]:Cand[S, 15], :], 1) ./ sum(RTOT[Cand[S, 14]:Cand[S, 15], :])
     end
 
     fig, ax = subplots()
