@@ -477,15 +477,14 @@ function rate_histo(m::simulation, Votes = false)
         Votes = simulate(m)
     end
 
-    names = ["clark", "dean", "edwards", "kerry"]
     DeltaO  = 0.6891
     DeltaMO = 0.5366
     DELTA = DeltaO*Open+DeltaMO*MOpen
     RTOT = RDemHat.*(1+DELTA)-VOther
-    
-    #RTOT = max(RTOT, sum(Votes, 2))
+    RTOT = max(RTOT, sum(Votes, 2))
     Vote_rate = sum(Votes ./ RTOT, 2)
-    PyPlot.plt[:hist](Vote_rate, 100)
-    #PyPlot.title("vote_rate")
-    savefig("vote_rate","_histo")
+    Vote_rate = convert(DataFrame, Vote_rate)
+    deleterows!(Vote_rate, find(isna(Vote_rate[:,1])))
+    Gadfly.plot(Vote_rate,x = "x1",  Geom.histogram(bincount=100))
+    
 end
