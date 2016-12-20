@@ -123,6 +123,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
             
             # col9は0~4、4は？
 
+            # T_sはcandidateの組み合わせごとに決まっていて、順序が入れ替わっても同じパラメータを使う
             if Cand[S, 9] == 1 && Cand[S, 10] == 1
                 VSTR_s = ones(48, 4)
                 Composite = ones(size(X,1),1)*COMPOSITE'
