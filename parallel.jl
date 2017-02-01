@@ -1,11 +1,14 @@
 function parallel(nproc, seed)
-    srand(seed)
+   
     addprocs(nproc)
-    initialvalues = randn(273, nproc)
-    
     @everywhere include(“preparation.jl”)
     @everywhere include(“bayes.jl”)
     @everywhere include(“loglike.jl”)
+    
+    srand(seed)
+    initialvalues = randn(273, nproc)
+    
+    writetable(*("initialvalue", "_$seed", ".txt"), estparam)
     
     estparam = Array(Float64, 273, nproc)
     likelihood = Array(Float64, 1, nproc)
