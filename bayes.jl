@@ -108,6 +108,7 @@ j = 0
 N_T_ij = [0;1;3;6];        # The number of T_ij that we need when the number of candidates are 1,2,3,4.
 for i in 1:size(data, 1)
     if j == data[i,149] - 1
+        # print(i)
         Cand[j+1,1:4] = squeeze(ones(1,4), 1)+min(data[i,3:6], squeeze(zeros(1,4), 1));
         if j == 0
             Cand[j+1,5] = 0;

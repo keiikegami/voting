@@ -310,7 +310,7 @@ function simulate(m::simulation)
     return simu_vote
 end
 
-# method 2 : visualization tyoe 1 (for each combination of cadidates)
+# method 2 : visualization type 1 (for each combination of cadidates)
 # default setting allows you to draw the results of all states
 # you can set t as state number (1 ~ 35)
 function candcand(m::simulation, t = 0, Votes = false)

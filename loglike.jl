@@ -153,6 +153,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
             end
 
             # Utiltiy of Strategic with no house elections
+            # koko
             VSTR_s = VSTR_s - C0 - X[:,2:end]*Cx*ones(1,N_candS) - Senate_s - Governer_s
 
             # eligible voters
@@ -294,4 +295,8 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
     loglik = sum(loglik_s)
     return loglik = -loglik
 
+end
+
+function loglike(param)
+    return new_loglike(param, DATA, Cand)
 end
