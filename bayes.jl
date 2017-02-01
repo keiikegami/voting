@@ -12,20 +12,6 @@ N_cand = 4
 data = readtable("data.csv", header = false)
 data = convert(Array, data)
 
-# initial valueのロード
-iii = 1
-jjj = 1
-kkk = 1
-
-inivalue = readtable(*("inivalue_", "$iii", ".txt"))
-inivalue = inivalue[:, jjj]
-
-learning_params = readtable(*("learning_params", "$iii", ".txt"))
-learning_params = learning_params[:, jjj]
-
-parameter = vcat(1000000000, 0, inivalue, learning_params)
-writetable(*("parameter_", "$iii", "_", "$jjj", "_", "$kkk", ".txt"), DataFrame(X = parameter))
-
 
 #　ここから本題
 D　=　data[:,45] .> 100 # Remove municipality with small populaion <100

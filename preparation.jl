@@ -14,12 +14,3 @@ max(number::Real, comparison::Any) = [max(number, parse(Int, i)) for i in compar
 # normpdfを配列に拡張
 import StatsFuns.normpdf
 normpdf(array::Array{Float64, 2}) = reshape([normpdf(i) for i in reshape(array, 1, size(array, 1)*size(array, 2))], size(array, 1), size(array, 2))
-
-# parameterの初期値を作成
-# inivalueは260こ
-# learning_paramsは13こ
-iii = 1 #kokokaeruiii;
-ini = DataFrame(randn(260, 100))
-learn = DataFrame(randn(13, 100))
-writetable(*("inivalue_", "$iii", ".txt"), ini)
-writetable(*("learning_params", "$iii", ".txt"), learn)

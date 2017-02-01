@@ -28,7 +28,7 @@ function new_loglike(param::Array{Float64,1}, DATA::Array{Real,2}, Cand::Array{I
     # new parameters
     # rho_eta = abs(param[261])
     rho_eta = 1
-    rho_chi = param[262:265]
+    rho_chi = abs(param[262:265])
     mu_chi = param[266:269]
     chi = param[270:273]
     
